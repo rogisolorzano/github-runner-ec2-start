@@ -1,0 +1,97 @@
+name: Starts a self-hosted EC2 runner on demand
+description: Starts a self-hosted EC2 runner on demand
+author: Rogi Solorzano
+inputs:
+  github-token:
+    required: true
+    description: >-
+      GitHub Personal Access Token with the 'repo' scope.
+
+  subnet-id:
+    required: true
+    description: >-
+      The subnet ID that the EC2 instance will be created in.
+      This subnet and security group should be in the same VPC.
+
+  security-group-id:
+    required: true
+    description: >-
+      EC2 Security Group Id. 
+      This subnet and security group should be in the same VPC.
+      The runner itself just needs to be able to make an outbound HTTPS connection.
+      No inbound traffic is needed.
+
+  image-id:
+    required: true
+    description: >-
+      The AMI ID to use.
+
+  runner-directory:
+    required: true
+    description: >-
+      The directory in which the runner was installed in. This is the directory where
+      the startup commands will run.
+
+  region:
+    required: false
+    description: >-
+      The AWS region. Defaults to us-east-1.
+
+  instance-type:
+    required: false
+    description: >-
+      EC2 Instance Type. Defaults to t2.micro.
+
+  iam-role-name:
+    required: false
+    description: >-
+      IAM Role Name to attach to the created EC2 instance.
+      Note that this requires additional AWS permissions.
+
+  key-name:
+    required: false
+    description: >-
+      The keypair name to attach to the instance. Useful for SSHing into your instance.
+
+  retry-delay:
+    required: false
+    description: >-
+      The amount of seconds to wait before re-checking if the instance is registered as a runner yet.
+      The default is to try every 5 seconds, up to 12 times. So we wait 60 seconds in total.
+
+  retry-amount:
+    required: false
+    description: >-
+      The number of times to re-check if the instance is registered as a runner yet.
+      The default is to try every 5 seconds, up to 12 times. So we wait 60 seconds in total.
+
+  startup-commands:
+    required: false
+    description: >-
+      A list of commands to run on startup. This replaces the default startup commands.
+      You can use these tokens in your commands and they will be replaced:
+      {repoUrl} - The URL of the repo.
+      {name} - The random instance name.
+      {token} - The github runner token.
+      {label} - The random label for the runner.
+
+  ec2-tags:
+    required: false
+    description: >-
+      The tags to attach to the EC2 instance.
+      Note that this requires additional AWS permissions.
+
+outputs:
+  runner-label:
+    description: >-
+      The unique label that was assigned to the runner. This is used to reference
+      the runner when running a job on it, and also when removing it from Github.
+
+  instance-id:
+    description: >-
+      EC2 Instance Id of the created runner.
+      The id is used to terminate the EC2 instance when the runner is not needed anymore.
+
+runs:
+  using: node16
+  main: dist/index.js

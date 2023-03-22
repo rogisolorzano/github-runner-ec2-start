@@ -20,7 +20,7 @@ export const config = {
   imageId: required(getInput('image-id')),
   runnerDirectory: required(getInput('runner-directory')),
   securityGroupId: required(getInput('security-group-id')),
-  instanceType: optional(getInput('ec2-instance-type')) ?? 't2.micro',
+  instanceType: optional(getInput('instance-type')) ?? 't2.micro',
   iamRoleName: optional(getInput('iam-role-name')),
   startupCommands: optionalJson<string[]>(getInput('startup-commands')),
   keyName: optional(getInput('key-name')),

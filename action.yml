@@ -8,21 +8,41 @@ inputs:
       GitHub Personal Access Token with the 'repo' scope.
 
   subnet-id:
-    required: true
+    required: false
     description: >-
       The subnet ID that the EC2 instance will be created in.
       This subnet and security group should be in the same VPC.
 
   security-group-id:
-    required: true
+    required: false
     description: >-
       EC2 Security Group Id. 
       This subnet and security group should be in the same VPC.
       The runner itself just needs to be able to make an outbound HTTPS connection.
       No inbound traffic is needed.
 
+  launch-template:
+    required: false
+    description: >-
+      Set 'true' to use the launch template, set 'false' to use image id and explicit configuration parameters. Defaults to false.
+
+  launch-template-id:
+    required: false
+    description: >-
+      Launch template id from the EC2 console. Set only if using the launch template approach.
+
+  launch-template-name:
+    required: false
+    description: >-
+      Launch template name from the EC2 console. Set only if using the launch template approach.
+
+  launch-template-version:
+    required: false
+    description: >-
+      Launch template version to use. Set only if using the launch template approach.
+
   image-id:
-    required: true
+    required: false
     description: >-
       The AMI ID to use.
 

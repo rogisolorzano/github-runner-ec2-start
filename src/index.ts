@@ -1,4 +1,4 @@
-import { EC2Client, RunInstancesCommand, waitUntilInstanceRunning, ResourceType } from '@aws-sdk/client-ec2';
+import { EC2Client, RunInstancesCommand, waitUntilInstanceRunning, ResourceType, RunInstancesRequest, LaunchTemplateSpecification } from '@aws-sdk/client-ec2';
 import { setOutput, error, setFailed, info } from '@actions/core';
 import { getOctokit, context } from '@actions/github';
 import { config } from './config';
@@ -20,7 +20,7 @@ const getStartupCommands = (runnerLabel: string, runnerToken: string): string =>
   if (config.startupCommands) {
     info('Using custom startup commands.');
     return config.startupCommands
-      .map((command) =>
+      .map((command: string) =>
         command
           .replace(`{name}`, runnerName)
           .replace(`{repoUrl}`, repoUrl)
@@ -66,6 +66,45 @@ async function getRegistrationToken() {
   }
 }
 
+function getRunInstancesRequest(runnerLabel: string, runnerToken: string): RunInstancesRequest {
+  const runInstancesRequest = {
+    MinCount: 1,
+    MaxCount: 1,
+    UserData: Buffer.from(getStartupCommands(runnerLabel, runnerToken)).toString('base64'),
+    IamInstanceProfile: config.iamRoleName ? { Name: config.iamRoleName } : undefined,
+    TagSpecifications: config.tags
+      ? [
+          {
+            ResourceType: ResourceType.instance,
+            Tags: config.tags,
+          },
+        ]
+      : undefined,
+  } as RunInstancesRequest;
+
+  if (config.launchTemplateId)
+  {
+    info(`Using launch template mode.`);
+    runInstancesRequest.LaunchTemplate = {
+      LaunchTemplateId: config.launchTemplateId,
+      LaunchTemplateName: config.launchTemplateName,
+      Version: config.launchTemplateVersion,
+    } as LaunchTemplateSpecification;
+    return runInstancesRequest;
+  }
+
+  info(`Using image id mode.`);
+
+  return {
+    ImageId: config.imageId,
+    InstanceType: config.instanceType,
+    KeyName: config.keyName,
+    SubnetId: config.subnetId,
+    SecurityGroupIds: config.securityGroupId ? [config.securityGroupId] : undefined,
+    ...runInstancesRequest
+  } as RunInstancesRequest;
+}
+
 /**
  * Starts the EC2 Instance.
  *
@@ -76,26 +115,8 @@ async function getRegistrationToken() {
 async function startEc2Instance(runnerLabel: string, runnerToken: string): Promise<string> {
   info('Starting EC2 instance.');
 
-  try {
-    const runInstancesCommand = new RunInstancesCommand({
-      ImageId: config.imageId,
-      InstanceType: config.instanceType,
-      MinCount: 1,
-      MaxCount: 1,
-      UserData: Buffer.from(getStartupCommands(runnerLabel, runnerToken)).toString('base64'),
-      KeyName: config.keyName,
-      SubnetId: config.subnetId,
-      SecurityGroupIds: config.securityGroupId ? [config.securityGroupId] : undefined,
-      IamInstanceProfile: config.iamRoleName ? { Name: config.iamRoleName } : undefined,
-      TagSpecifications: config.tags
-        ? [
-            {
-              ResourceType: ResourceType.instance,
-              Tags: config.tags,
-            },
-          ]
-        : undefined,
-    });
+  try {    
+    const runInstancesCommand = new RunInstancesCommand(getRunInstancesRequest(runnerLabel, runnerToken));
     const output = await ec2Client.send(runInstancesCommand);
     const instanceId = output.Instances?.[0]?.InstanceId;
 

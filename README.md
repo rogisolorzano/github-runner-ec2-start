@@ -68,3 +68,11 @@ Don't forget to add the [github-runner-ec2-stop](https://github.com/rogisolorzan
 See [self-hosted runner security](https://docs.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners#self-hosted-runner-security) for more info on security considerations. It is recommended to only use self-hosted runners in private repositories.
 
 This action starts the runner as an ephemeral runner. See the default startup command in `src/index.ts` -> `getStartupCommands`. You can use the `startup-commands` param to pass in your custom startup commands to change any behavior and run your own scripts.
+
+# Development
+
+To rebuild the `./dist/index.js` file, run:
+
+```sh
+ncc build src/index.ts --license licenses.txt
+```

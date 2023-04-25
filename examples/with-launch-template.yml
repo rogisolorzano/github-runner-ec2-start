@@ -1,0 +1,64 @@
+# This workflow shows an example of using the actions with a launch template
+# instead of with explicit EC2 config
+name: Run tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start-runner:
+    name: Start EC2 runner
+    runs-on: ubuntu-latest
+    ## Assign outputs from the start-ec2-runner step
+    outputs:
+      runner-label: ${{ steps.start-ec2-runner.outputs.runner-label }}
+      instance-id: ${{ steps.start-ec2-runner.outputs.instance-id }}
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run EC2 Start
+        id: start-ec2-runner
+        uses: rogisolorzano/github-runner-ec2-start@v1.2
+        with:
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          runner-directory: /home/ubuntu/actions-runner
+          launch-template: true
+          launch-template-id: lt-0173bdd241de79614
+          launch-template-version: 2
+
+  test:
+    name: Test
+    needs: start-runner
+    # Use the runner-label that was output from the start-runner step as the runs-on param.
+    runs-on: ${{ needs.start-runner.outputs.runner-label }}
+    steps:
+      - name: Run tests
+        run: echo 'Command to run tests here'
+
+  stop-runner:
+    name: Stop EC2 runner
+    # Always stop the runner regardless of workflow failure or cancellation
+    if: ${{ always() }}
+    needs:
+      - start-runner
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Run EC2 Stop
+        uses: rogisolorzano/github-runner-ec2-stop@v1
+        with:
+          github-token: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+          runner-label: ${{ needs.start-runner.outputs.runner-label }}
+          instance-id: ${{ needs.start-runner.outputs.instance-id }}

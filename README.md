@@ -59,6 +59,10 @@ This action assumes that the Github runner software is already installed. You ca
 
 We recommend using a separate security group for your runners. Github runners use HTTPS long polling, so the only thing needed is outbound traffic on port 443. Inbound traffic isn't needed.
 
+### 5. Create launch template (optional)
+
+A [launch template](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-launch-templates.html) provides a convenient way to manage the launch config for your EC2 instances. This action supports specifying a launch template to use (see `examples/with-launch-template.yml`). This is optional, you can also configure the EC2 instance with config params provided by this action.
+
 ## Using in your workflow
 
 Reference the example workflows in `./examples` to get started. See `action.yml` for more info on the inputs this workflow supports.

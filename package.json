@@ -5,7 +5,7 @@
   "main": "build/index.js",
   "scripts": {
     "build": "tsc",
-    "package": "npm run build && ncc build build/index.js",
+    "package": "npm run build && ncc build build/index.js --license licenses.txt",
     "lint": "npx eslint ./src",
     "prettier": "npx prettier ./src --write"
   },

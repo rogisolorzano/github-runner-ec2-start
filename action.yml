@@ -30,11 +30,13 @@ inputs:
     required: false
     description: >-
       Launch template id from the EC2 console. Set only if using the launch template approach.
+      Either a template ID or template name is required, but both can't be used at the same time.
 
   launch-template-name:
     required: false
     description: >-
       Launch template name from the EC2 console. Set only if using the launch template approach.
+      Either a template ID or template name is required, but both can't be used at the same time.
 
   launch-template-version:
     required: false

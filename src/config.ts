@@ -14,18 +14,47 @@ const optionalJson = <T>(value: string): T | undefined => (value === '' ? undefi
 
 const optionalNumber = (value: string): number | undefined => (value === '' ? undefined : Number(value));
 
-export const config = {
-  githubToken: required(getInput('github-token')),
-  subnetId: required(getInput('subnet-id')),
-  imageId: required(getInput('image-id')),
-  runnerDirectory: required(getInput('runner-directory')),
-  securityGroupId: required(getInput('security-group-id')),
-  instanceType: optional(getInput('instance-type')) ?? 't2.micro',
-  iamRoleName: optional(getInput('iam-role-name')),
-  startupCommands: optionalJson<string[]>(getInput('startup-commands')),
-  keyName: optional(getInput('key-name')),
-  tags: optionalJson<Tag[]>(getInput('ec2-tags')),
-  region: optional(getInput('region')) ?? 'us-east-1',
-  retryDelay: optionalNumber(getInput('retry-delay')) ?? 5,
-  retryAmount: optionalNumber(getInput('retry-amount')) ?? 12,
-} as const;
+function parseGeneralSettings(): any {
+  return {
+    githubToken: required(getInput('github-token')),
+    runnerDirectory: required(getInput('runner-directory')),
+    iamRoleName: optional(getInput('iam-role-name')),
+    startupCommands: optionalJson<string[]>(getInput('startup-commands')),
+    tags: optionalJson<Tag[]>(getInput('ec2-tags')),
+    retryDelay: optionalNumber(getInput('retry-delay')) ?? 5,
+    retryAmount: optionalNumber(getInput('retry-amount')) ?? 12,
+  };
+}
+
+function parseExplicitConfig(): any {
+  return {
+    subnetId: required(getInput('subnet-id')),
+    imageId: required(getInput('image-id')),
+    securityGroupId: required(getInput('security-group-id')),
+    instanceType: optional(getInput('instance-type')) ?? 't2.micro',
+    region: optional(getInput('region')) ?? 'us-east-1',
+    keyName: optional(getInput('key-name')),
+  };
+}
+
+function parseLaunchTemplateConfig(): any {
+  return {
+    launchTemplateId: required(getInput('launch-template-id')),
+    launchTemplateName: optional(getInput('launch-template-name')),
+    launchTemplateVersion: optional(getInput('launch-template-version')),
+  };
+}
+
+function parseConfig(): any {
+  const launchTemplate = optional(getInput('launch-template'));
+  if (launchTemplate == 'true')
+  {
+    return { ...parseLaunchTemplateConfig(), ...parseGeneralSettings() };
+  }
+  else
+  {
+    return { ...parseExplicitConfig(), ...parseGeneralSettings() };
+  }
+}
+
+export const config = parseConfig();

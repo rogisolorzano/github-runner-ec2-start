@@ -21,6 +21,9 @@ function parseGeneralSettings(): any {
     startupCommands: optionalJson<string[]>(getInput('startup-commands')),
     retryDelay: optionalNumber(getInput('retry-delay')) ?? 5,
     retryAmount: optionalNumber(getInput('retry-amount')) ?? 12,
+    cleanupTagName: optional(getInput('cleanup-tag-name')),
+    cleanupTagValue: optional(getInput('cleanup-tag-value')),
+    cleanupOlderThanHours: optionalNumber(getInput('cleanup-older-than-hours')) ?? 1,
   };
 }
 
@@ -47,12 +50,10 @@ function parseLaunchTemplateConfig(): any {
 
 function parseConfig(): any {
   const launchTemplate = optional(getInput('launch-template'));
-  if (launchTemplate == 'true')
-  {
+  if (launchTemplate == 'true') {
     return { ...parseLaunchTemplateConfig(), ...parseGeneralSettings() };
   }
-  else
-  {
+  else {
     return { ...parseExplicitConfig(), ...parseGeneralSettings() };
   }
 }

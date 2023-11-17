@@ -1,5 +1,5 @@
 import { EC2Client, RunInstancesCommand, waitUntilInstanceRunning, ResourceType, RunInstancesRequest, LaunchTemplateSpecification } from '@aws-sdk/client-ec2';
-import { setOutput, error, setFailed, info } from '@actions/core';
+import { setOutput, saveState, error, setFailed, info } from '@actions/core';
 import { getOctokit, context } from '@actions/github';
 import { config } from './config';
 import { wait, getRandomSlug } from './utils';
@@ -35,12 +35,12 @@ const getStartupCommands = (runnerLabel: string, runnerToken: string): string =>
     `cd ${config.runnerDirectory}`,
     'export RUNNER_ALLOW_RUNASROOT=1',
     `./config.sh ` +
-      `--url ${repoUrl} ` +
-      `--token ${runnerToken} ` +
-      `--labels ${runnerLabel} ` +
-      `--name ${runnerName} ` +
-      `--unattended ` +
-      `--ephemeral`,
+    `--url ${repoUrl} ` +
+    `--token ${runnerToken} ` +
+    `--labels ${runnerLabel} ` +
+    `--name ${runnerName} ` +
+    `--unattended ` +
+    `--ephemeral`,
     './run.sh',
   ].join('\n');
 };
@@ -74,16 +74,15 @@ function getRunInstancesRequest(runnerLabel: string, runnerToken: string): RunIn
     IamInstanceProfile: config.iamRoleName ? { Name: config.iamRoleName } : undefined,
     TagSpecifications: config.tags
       ? [
-          {
-            ResourceType: ResourceType.instance,
-            Tags: config.tags,
-          },
-        ]
+        {
+          ResourceType: ResourceType.instance,
+          Tags: config.tags,
+        },
+      ]
       : undefined,
   } as RunInstancesRequest;
 
-  if (config.launchTemplateId)
-  {
+  if (config.launchTemplateId) {
     info(`Using launch template mode.`);
     runInstancesRequest.LaunchTemplate = {
       LaunchTemplateId: config.launchTemplateId,
@@ -115,7 +114,7 @@ function getRunInstancesRequest(runnerLabel: string, runnerToken: string): RunIn
 async function startEc2Instance(runnerLabel: string, runnerToken: string): Promise<string> {
   info('Starting EC2 instance.');
 
-  try {    
+  try {
     const runInstancesCommand = new RunInstancesCommand(getRunInstancesRequest(runnerLabel, runnerToken));
     const output = await ec2Client.send(runInstancesCommand);
     const instanceId = output.Instances?.[0]?.InstanceId;
@@ -186,6 +185,8 @@ async function start() {
     const label = getRandomSlug();
     const githubRegistrationToken = await getRegistrationToken();
     const instanceId = await startEc2Instance(label, githubRegistrationToken);
+    saveState('runner-label', label);
+    saveState('instance-id', instanceId)
     setOutput('runner-label', label);
     setOutput('instance-id', instanceId);
     await waitForRunnerRegistered(label);
